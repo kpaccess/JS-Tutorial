@@ -19,7 +19,7 @@ export default function DashboardNav({ user }: { user: User }) {
     <nav className="border-b border-white/10 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
       <div className="container mx-auto px-4 max-w-6xl flex items-center justify-between h-16">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-yellow-400 text-xl font-black">⚡ JS</span>
+          <span className="text-yellow-400 text-xl font-black">⚡ Dev</span>
           <span className="text-white font-bold hidden sm:block">Mastery</span>
         </Link>
 

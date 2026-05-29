@@ -33,7 +33,7 @@ export default function LoginPage() {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 space-y-6 backdrop-blur-sm">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-white">Welcome back</h1>
-            <p className="text-slate-400 mt-1">Sign in to continue your JavaScript journey</p>
+            <p className="text-slate-400 mt-1">Sign in to continue your developer journey</p>
           </div>
 
           <GoogleButton label="Sign in with Google" />

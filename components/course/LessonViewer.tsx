@@ -41,6 +41,7 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
   const alreadyPassed = (latestAttempt as { passed?: boolean } | null)?.passed === true;
   const minMinutes = MIN_SESSION_MINUTES;
   const timerDone = elapsed >= minMinutes;
+  const courseId = lesson.id.startsWith("java-") ? "java" : "javascript";
 
   const saveProgress = useCallback(
     async (minutes: number) => {
@@ -176,7 +177,7 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
         userId={userId}
         latestAttempt={latestAttempt as Record<string, unknown> | null}
         onBack={() => setShowQuiz(false)}
-        onPass={() => router.push("/dashboard")}
+        onPass={() => router.push(`/dashboard/${courseId}`)}
       />
     );
   }
@@ -194,10 +195,10 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
           <p className="text-slate-400">{lesson.description}</p>
         </div>
         <button
-          onClick={() => router.push("/dashboard")}
-          className="text-slate-400 hover:text-white text-sm"
+          onClick={() => router.push(`/dashboard/${courseId}`)}
+          className="text-slate-400 hover:text-white text-sm cursor-pointer"
         >
-          ← Back to Dashboard
+          ← Back to Course
         </button>
       </div>
 

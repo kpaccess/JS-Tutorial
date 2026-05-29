@@ -43,7 +43,7 @@ export default function RegisterPage() {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 space-y-6 backdrop-blur-sm">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-white">Create your account</h1>
-            <p className="text-slate-400 mt-1">Start your JavaScript mastery journey today</p>
+            <p className="text-slate-400 mt-1">Start your developer mastery journey today</p>
           </div>
 
           <GoogleButton label="Sign up with Google" />

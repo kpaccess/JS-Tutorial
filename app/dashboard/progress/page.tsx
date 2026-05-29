@@ -1,37 +1,57 @@
 import { createClient } from "@/lib/supabase/server";
-import { lessons, PASS_THRESHOLD } from "@/lib/course-data";
+import { getLessonsByCourse, PASS_THRESHOLD } from "@/lib/course-data";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
-export default async function ProgressPage() {
+export default async function ProgressPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ course?: string }>;
+}) {
+  const { course = "javascript" } = await searchParams;
+
+  if (course !== "javascript" && course !== "java") {
+    notFound();
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: attempts } = await supabase
+  const lessons = getLessonsByCourse(course);
+
+  const { data: allAttempts } = await supabase
     .from("quiz_attempts")
     .select("*")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: true });
 
-  const { data: progressRows } = await supabase
+  const { data: allProgressRows } = await supabase
     .from("user_progress")
     .select("*")
     .eq("user_id", user!.id);
 
-  const progressMap = new Map((progressRows ?? []).map(p => [p.lesson_id, p]));
+  // Filter attempts and progress rows for the active course
+  const attempts = (allAttempts ?? []).filter(a => lessons.some(l => l.id === a.lesson_id));
+  const progressRows = (allProgressRows ?? []).filter(p => lessons.some(l => l.id === p.lesson_id));
+
+  const progressMap = new Map(progressRows.map(p => [p.lesson_id, p]));
 
   // Build per-lesson attempt history
   const attemptsByLesson = new Map<string, typeof attempts>();
-  for (const a of attempts ?? []) {
-    if (!attemptsByLesson.has(a.lesson_id)) attemptsByLesson.set(a.lesson_id, []);
+  for (const a of attempts) {
+    if (!attemptsByLesson.has(a.lesson_id)) {
+      attemptsByLesson.set(a.lesson_id, []);
+    }
     attemptsByLesson.get(a.lesson_id)!.push(a);
   }
 
   const passedLessons = new Set(
-    (attempts ?? []).filter(a => a.passed).map(a => a.lesson_id)
+    attempts.filter(a => a.passed).map(a => a.lesson_id)
   );
 
-  const totalTime = (progressRows ?? []).reduce((s, p) => s + (p.time_spent_minutes ?? 0), 0);
+  const totalTime = progressRows.reduce((s, p) => s + (p.time_spent_minutes ?? 0), 0);
   const completedCount = passedLessons.size;
 
   const levelColors: Record<string, string> = {
@@ -40,11 +60,47 @@ export default async function ProgressPage() {
     advanced: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   };
 
+  // Theme Styling
+  const isJava = course === "java";
+  const activeTabStyle = isJava 
+    ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20 border-purple-400/30" 
+    : "bg-yellow-400 text-black shadow-lg shadow-yellow-400/20 border-yellow-300/30";
+  
+  const textHighlight = isJava ? "text-purple-400" : "text-yellow-400";
+  const courseTitle = isJava ? "Java Mastery" : "JavaScript Mastery";
+
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto py-4">
+      {/* Back button */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Your Progress</h1>
-        <p className="text-slate-400 mt-1">Detailed breakdown of your learning journey.</p>
+        <Link href="/dashboard" className="text-slate-400 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
+          <span>←</span> Back to Main Portal
+        </Link>
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Your Progress</h1>
+          <p className="text-slate-400 mt-1">Detailed breakdown of your learning journey.</p>
+        </div>
+
+        {/* Tab Selector */}
+        <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/10 w-fit">
+          <Link href="/dashboard/progress?course=javascript">
+            <button className={`px-4 py-2 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
+              !isJava ? activeTabStyle : "text-slate-400 hover:text-white"
+            }`}>
+              JavaScript
+            </button>
+          </Link>
+          <Link href="/dashboard/progress?course=java">
+            <button className={`px-4 py-2 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
+              isJava ? activeTabStyle : "text-slate-400 hover:text-white"
+            }`}>
+              Java
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Summary stats */}
@@ -54,12 +110,12 @@ export default async function ProgressPage() {
           { label: "Total Time", value: `${Math.floor(totalTime / 60)}h ${totalTime % 60}m`, icon: "⏱️" },
           {
             label: "Quiz Attempts",
-            value: (attempts ?? []).length,
+            value: attempts.length,
             icon: "📝",
           },
           {
             label: "Pass Rate",
-            value: `${attempts && attempts.length > 0 ? Math.round(((attempts ?? []).filter(a => a.passed).length / (attempts ?? []).length) * 100) : 0}%`,
+            value: `${attempts.length > 0 ? Math.round((attempts.filter(a => a.passed).length / attempts.length) * 100) : 0}%`,
             icon: "🎯",
           },
         ].map(s => (
@@ -74,8 +130,8 @@ export default async function ProgressPage() {
       {/* Overall progress */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-6">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-white font-semibold">Course Progress</h2>
-          <span className="text-yellow-400 font-bold">{Math.round((completedCount / lessons.length) * 100)}%</span>
+          <h2 className="text-white font-semibold">{courseTitle} Completion</h2>
+          <span className={`font-bold ${textHighlight}`}>{Math.round((completedCount / lessons.length) * 100)}%</span>
         </div>
         <Progress value={(completedCount / lessons.length) * 100} className="h-3" />
         <div className="grid grid-cols-3 gap-4 mt-4">
@@ -86,7 +142,7 @@ export default async function ProgressPage() {
               <div key={level} className="text-center">
                 <Badge variant="outline" className={levelColors[level]}>{level}</Badge>
                 <div className="text-white font-bold mt-1">{levelPassed}/{levelLessons.length}</div>
-                <Progress value={(levelPassed / levelLessons.length) * 100} className="h-1.5 mt-1" />
+                <Progress value={levelLessons.length > 0 ? (levelPassed / levelLessons.length) * 100 : 0} className="h-1.5 mt-1" />
               </div>
             );
           })}
@@ -105,7 +161,7 @@ export default async function ProgressPage() {
           return (
             <div
               key={lesson.id}
-              className={`border rounded-xl p-4 ${
+              className={`border rounded-xl p-4 transition-colors ${
                 passed
                   ? "border-green-500/20 bg-green-500/5"
                   : lessonAttempts.length > 0
@@ -121,13 +177,13 @@ export default async function ProgressPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-slate-500 text-xs font-mono">
-                        {String(lesson.order).padStart(2, "0")}
+                        Day {lesson.day}
                       </span>
                       <Badge variant="outline" className={`text-xs ${levelColors[lesson.level]}`}>
                         {lesson.level}
                       </Badge>
                     </div>
-                    <div className="text-white font-semibold text-sm">{lesson.title}</div>
+                    <div className="text-white font-semibold text-sm mt-0.5">{lesson.title}</div>
                   </div>
                 </div>
 
