@@ -52,10 +52,19 @@ netlify deploy --prod
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 6. Deploy!
 
-### Supabase auth redirect URL
+### Supabase auth URLs
 In Supabase → **Authentication → URL Configuration**:
-- Add your Netlify URL as a **Redirect URL**:
+- Set **Site URL** to your real deployed app URL:
+  `https://your-site.netlify.app`
+- Add these **Redirect URLs**:
+  `http://localhost:3000/api/auth/callback`
   `https://your-site.netlify.app/api/auth/callback`
+
+If Google sign-in sends you to a Netlify "Site not found" page, the **Site URL** is pointing at a deleted, renamed, or misspelled Netlify site. Update it to the current production URL and start the sign-in flow again from `/login`; do not refresh or reuse an old Google/Supabase callback URL.
+
+### Google provider callback URL
+In Google Cloud Console → your OAuth Client → **Authorized redirect URIs**, add the Supabase callback URL:
+`https://your-project-id.supabase.co/auth/v1/callback`
 
 ---
 
