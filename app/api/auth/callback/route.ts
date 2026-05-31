@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
+  const redirectUrl = new URL('/login', origin)
 
   if (code) {
     const supabase = await createClient()
@@ -12,7 +13,12 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
+
+    redirectUrl.searchParams.set('error', 'auth')
+    redirectUrl.searchParams.set('message', error.message)
+    return NextResponse.redirect(redirectUrl)
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  redirectUrl.searchParams.set('error', 'missing_code')
+  return NextResponse.redirect(redirectUrl)
 }
