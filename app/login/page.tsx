@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +12,37 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("code");
+    if (!code) return;
+
+    let cancelled = false;
+
+    async function completeOAuthSignIn() {
+      setLoading(true);
+      const supabase = createClient();
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (cancelled) return;
+
+      if (error) {
+        setLoading(false);
+        toast.error(error.message);
+        router.replace(`/login?error=auth&message=${encodeURIComponent(error.message)}`);
+        return;
+      }
+
+      router.replace("/dashboard");
+      router.refresh();
+    }
+
+    completeOAuthSignIn();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
