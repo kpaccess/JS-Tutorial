@@ -1,26 +1,12 @@
 "use client";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
 
 export default function GoogleButton({ label = "Continue with Google" }: { label?: string }) {
   const [loading, setLoading] = useState(false);
 
-  async function handleGoogle() {
+  function handleGoogle() {
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-        queryParams: { access_type: "offline", prompt: "consent" },
-      },
-    });
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-    }
-    // on success Supabase redirects the browser — no need to do anything else
+    window.location.assign("/api/auth/sign-in/google");
   }
 
   return (

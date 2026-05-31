@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getRequestOrigin, getSafeNextPath } from '@/lib/auth/redirect-url'
 import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = request.nextUrl
+  const origin = getRequestOrigin(request)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = getSafeNextPath(searchParams.get('next'))
   const redirectUrl = new URL('/login', origin)
 
   if (code) {
