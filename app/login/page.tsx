@@ -17,12 +17,13 @@ export default function LoginPage() {
     const code = new URLSearchParams(window.location.search).get("code");
     if (!code) return;
 
+    const authCode = code;
     let cancelled = false;
 
     async function completeOAuthSignIn() {
       setLoading(true);
       const supabase = createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { error } = await supabase.auth.exchangeCodeForSession(authCode);
 
       if (cancelled) return;
 
