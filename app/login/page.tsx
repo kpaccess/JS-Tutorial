@@ -14,36 +14,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("code");
-    if (!code) return;
+    if (!new URLSearchParams(window.location.search).has("code")) return;
 
-    const authCode = code;
-    let cancelled = false;
-
-    async function completeOAuthSignIn() {
-      setLoading(true);
-      const supabase = createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(authCode);
-
-      if (cancelled) return;
-
-      if (error) {
-        setLoading(false);
-        toast.error(error.message);
-        router.replace(`/login?error=auth&message=${encodeURIComponent(error.message)}`);
-        return;
-      }
-
-      router.replace("/dashboard");
-      router.refresh();
-    }
-
-    completeOAuthSignIn();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+    window.location.replace(`/api/auth/callback${window.location.search}`);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
