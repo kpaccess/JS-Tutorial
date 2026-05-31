@@ -40,7 +40,7 @@ export default function DashboardNav({ user }: { user: User }) {
             onClick={handleSignOut}
             variant="outline"
             size="sm"
-            className="border-white/20 text-slate-300 hover:text-white hover:bg-white/10"
+            className="border-red-400/30 bg-red-500/10 text-red-100 hover:border-red-300/50 hover:bg-red-500/20 hover:text-white"
           >
             Sign Out
           </Button>
