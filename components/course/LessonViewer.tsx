@@ -34,13 +34,24 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
   const [showQuiz, setShowQuiz] = useState(false);
   const [elapsed, setElapsed] = useState((initialProgress as { time_spent_minutes?: number } | null)?.time_spent_minutes ?? 0);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [unlockedEarly, setUnlockedEarly] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(`unlocked_${lesson.id}`) === "true";
+    }
+    return false;
+  });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const saveRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
+  const handleUnlockEarly = () => {
+    setUnlockedEarly(true);
+    localStorage.setItem(`unlocked_${lesson.id}`, "true");
+  };
+
   const alreadyPassed = (latestAttempt as { passed?: boolean } | null)?.passed === true;
   const minMinutes = MIN_SESSION_MINUTES;
-  const timerDone = elapsed >= minMinutes;
+  const timerDone = elapsed >= minMinutes || unlockedEarly;
   const courseId = lesson.id.startsWith("java-") ? "java" : "javascript";
 
   const saveProgress = useCallback(
@@ -209,7 +220,9 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
             <span className="text-2xl">{timerDone ? "✅" : "⏱️"}</span>
             <div>
               <div className="text-white font-semibold text-sm">
-                {timerDone ? "Minimum time reached — quiz unlocked!" : "Complete 1 hour to unlock the quiz"}
+                {timerDone 
+                  ? (unlockedEarly ? "Lesson completed early — quiz unlocked!" : "Minimum time reached — quiz unlocked!") 
+                  : "Complete 1 hour to unlock the quiz"}
               </div>
               <div className="text-slate-400 text-xs">
                 {timerDone
@@ -224,9 +237,20 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
           </div>
         </div>
         <Progress value={progressPct} className="h-2" />
-        <div className="flex justify-between text-xs text-slate-500">
-          <span>{elapsedMinutes}m logged</span>
-          <span>{minMinutes}m required</span>
+        <div className="flex justify-between items-center text-xs">
+          <div className="text-slate-500">
+            <span>{elapsedMinutes}m logged</span>
+            <span className="mx-1">/</span>
+            <span>{minMinutes}m required</span>
+          </div>
+          {!timerDone && !alreadyPassed && (
+            <button 
+              onClick={handleUnlockEarly}
+              className="text-yellow-400 hover:text-yellow-300 font-medium underline underline-offset-4"
+            >
+              I&apos;ve finished reading, unlock quiz →
+            </button>
+          )}
         </div>
       </div>
 
@@ -266,7 +290,17 @@ export default function LessonViewer({ lesson, questions, userId, initialProgres
           <div className="text-slate-400 text-sm">
             {timerDone
               ? "Ready to test your knowledge? Take the quiz!"
-              : `Spend ${minMinutes} minutes on this lesson before taking the quiz.`}
+              : (
+                <div className="space-y-1">
+                  <p>Spend {minMinutes} minutes on this lesson before taking the quiz.</p>
+                  <button 
+                    onClick={handleUnlockEarly}
+                    className="text-yellow-400 hover:text-yellow-300 font-medium underline underline-offset-4"
+                  >
+                    I&apos;ve finished reading, unlock quiz early →
+                  </button>
+                </div>
+              )}
           </div>
         )}
         <Button
