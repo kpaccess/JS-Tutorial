@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JS Mastery – Interactive JavaScript Course",
-  description: "A 1-month interactive JavaScript course from basics to advanced.",
+  title: "Tutorial Series – Master Your Craft",
+  description: "Comprehensive interactive courses for JavaScript, Java, and more – from basics to advanced.",
 };
 
 export default function RootLayout({
